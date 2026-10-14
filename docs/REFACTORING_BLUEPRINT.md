@@ -17,40 +17,50 @@
 
 ---
 
-## 二、 2027 新版推薦架構設計 (Proposed Architecture)
+## 二、 新版架構設計 (Proposed Architecture)
 
 ### 1. 模組化職責分工 (Layered Architecture)
-建議將 2027 系統劃分為以下乾淨的獨立子模組：
+全系統遵循「**Core-first、自包含題目庫、零 Node.js 依賴**」原則：
 
 ```
-DS2027_domjudge/
-├── domjudge_cli.py              # CLI 命令列進入點 (Click / Argparse)
-├── core/                        # 核心工具包
-│   ├── config.py                # 題目配置解析器 (讀取 YAML / Frontmatter)
-│   ├── markdown_parser.py       # Markdown 格式驗證與範例提取
-│   ├── pdf_builder.py           # HTML 模板渲染與 Edge Headless PDF 生成
-│   ├── testcase_engine.py       # 安全執行 Solver、產生測資、舊測資清理
+domjudge_builder/
+├── domjudge_cli.py              # CLI 命令列進入點 (標準庫 argparse)
+│
+├── core/                        # [Phase 1] 核心引擎 (零外部框架依賴)
+│   ├── __init__.py
+│   ├── spec.py                  # concept.yaml 與 Frontmatter 解析 (支援雙向寬容)
+│   ├── markdown_engine.py       # Markdown 格式驗證、HTML 轉換與範例提取
+│   ├── pdf_engine.py            # HTML 模板渲染與 Edge Headless PDF 生成
+│   ├── testcase_runner.py       # subprocess 隔離執行 Solver、5s 逾時防護、範例交叉驗證
 │   └── packager.py              # 依 DOMjudge 7.3.3 標準封裝 ZIP (含 sample/secret 分流)
 │
 ├── templates/                   # 排版模板 (HTML / CSS)
-│   └── problem_template.html    # 2026 已驗證的 A4 印刷樣式模板
+│   ├── html_template.html       # 2026 已驗證的 A4 印刷樣式模板
+│   └── concept_template.yaml    # 空白概念規格骨架
 │
-├── problems/                    # [推薦方案] 以題目為單位的整潔資料夾結構
-│   ├── DAA/
-│   │   ├── statement.md         # 題目敘述 (含 YAML Frontmatter 題名與時限)
-│   │   ├── solver.py            # 解答與測資生成函式
-│   │   └── problem.pdf          # [編譯產出]
-│   └── DBM/
+├── problems/                    # [核心資產] 自包含題目庫
+│   ├── DBM/
+│   │   ├── concept.yaml         # 核心概念 Spec (SSOT)
+│   │   ├── statement.md         # 題目敘述
+│   │   ├── solver.py            # 解答與 generate_inputs(seed) 函式
+│   │   ├── problem.pdf          # [編譯產出] 題本
+│   │   └── testcases/           # [編譯產出] 明文測資 (.in / .ans，每次建置重建)
+│   └── DAL/
+│       ├── concept.yaml
 │       ├── statement.md
-│       ├── solver.py
-│       └── problem.pdf
+│       └── solver.py
 │
-└── dist/                        # 最終生成的 DOMjudge 題目包
-    ├── DAA.zip
-    └── DBM.zip
+├── dist/                        # 最終生成的 DOMjudge 題目包
+│   └── DBM.zip
+│
+├── ai/                          # [Phase 2] LLM 協同橋接模組 (延遲載入)
+│   ├── client.py                # 統一 LLM API Client (Gemini / OpenAI)
+│   └── prompts.py               # 發想收斂、題面生成、解答生成模板
+│
+└── web/                         # [Phase 3] 雙視圖工作台 (零 npm 依賴)
+    ├── server.py                # 輕量 FastAPI 後端 (由 domjudge_cli serve 啟動)
+    └── static/                  # Vanilla JS + 現代 CSS 單頁應用 (發想頁 + 管線頁)
 ```
-
-> **備註**：若希望維持 2026 的平鋪式分類（`file_MDs/`, `solvers/`, `file_PDFs/`, `file_ZIPs/`），亦可保留，但強烈建議透過 `core/` 模組將實作邏輯封裝起來，主程式僅保留調度程式碼。
 
 ---
 

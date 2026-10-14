@@ -82,50 +82,63 @@
 
 ---
 
-## 三、 2027 重構目標與下一步執行清單 (Checklist for Next Chat)
+## 三、 系統分階段實作計畫與驗收標準 (4-Stage Phased Roadmap)
 
-在重開新對話時，請依照下列清單逐步執行 2027 系統的優雅重構：
+經討論敲定，全系統依照「**核心閉環先行 $\to$ 命令列封裝 $\to$ AI 協同串接 $\to$ 雙視圖工作台**」4 個階段逐步實作與功能驗收：
 
-### 階段一：架構與目錄結構設計 (Architecture Setup)
-- [ ] 確定 2027 的目錄組織模式：
-  * **推薦方案（以題目為單位封裝）**：
-    `problems/<Problem_ID>/` 內包含 `statement.md`、`solver.py`、`config.yaml`。
-  * 或維持集中平鋪分類（`markdown/`, `solvers/`, `output/`）。
-- [ ] 建立 `templates/` 目錄並放入已驗證的 `html_template.html`。
+### 階段一：Core Engine 最小閉環與 MVP 驗證 (Minimal Core MVP)
+* **實作內容**：
+  - [ ] 目錄與基準題目建立：建立 `problems/DBM/`，遷移 `statement.md`、`solver.py` 與 `concept.yaml` 作為驗證基準。
+  - [ ] `core/spec.py`：規格解析器（雙向寬容：優先讀取 `concept.yaml`；若無則自動 fallback 解析 `statement.md` 的 YAML Frontmatter）。
+  - [ ] `core/markdown_engine.py`：解析題面結構、提取 `### 範例輸入 #1` 與 `### 範例輸出 #1`、轉為內部 HTML。
+  - [ ] `core/pdf_engine.py`：調用 Edge Headless 將題本渲染為標準 A4 PDF（保留 MathJax 渲染等待預算）。
+  - [ ] `core/testcase_runner.py`：
+    - 呼叫 `solver.py` 之 `generate_inputs(seed=42)` 產出測試案例。
+    - **使用 `subprocess` 進行行程隔離與超時終止**（超時 5s 自動強制 kill，防止死迴圈凍結）。
+    - 寫入 `problems/<ID>/testcases/`（每次生成前自動清空舊檔，供人肉抽檢）。
+    - **自動交叉檢驗 (Sanity Check)**：將 Markdown 範例輸入餵入 solver，若輸出與題本範例輸出不一致立即報錯中斷。
+  - [ ] `core/packager.py`：自動生成個別專屬之 `problem.yaml` 與 `domjudge-problem.ini`，並依 `samples` 數量自動分流封裝為 `dist/<ID>.zip`。
+* **驗收標準 (Acceptance Criteria)**：
+  - [ ] 執行單一測試腳本，能順利產出 `problems/DBM/problem.pdf`，排版與公式無誤。
+  - [ ] `problems/DBM/testcases/` 產出對應 `.in` 與 `.ans` 明文檔。
+  - [ ] 刻意修改 `statement.md` 的範例輸出時，系統能主動攔截並報錯（防呆有效）。
+  - [ ] 成功生成 `dist/DBM.zip`，解壓縮結構完全符合 DOMjudge 7.3.3 標準。
 
-### 階段二：題目配置宣告化 (Config Decoupling)
-- [ ] 徹底消滅全域 `file_configs/`。
-- [ ] 改為由題目的 `statement.md` 頂端 YAML Frontmatter 宣告題目名稱、時限與記憶體（或各題專屬 `config.yaml`）：
-  ```markdown
-  ---
-  id: DBM
-  name: 製作餅乾後剩下多少材料
-  timelimit: 1
-  memory: 64
-  samples: 2
-  validator_flags: 'float_tolerance 1E-3'
-  ---
-  ```
+### 階段二：現代化 CLI 與多題批次處理 (CLI & Batch Processing)
+* **實作內容**：
+  - [ ] 建立 `domjudge_cli.py`（使用 Python 標準庫 `argparse`，無第三方框架依賴）。
+  - [ ] 支援命令：
+    - `python domjudge_cli.py build <ID>`：編譯單題（生 PDF、跑測資、打包 ZIP）。
+    - `python domjudge_cli.py preview <ID>`：僅渲染 PDF 供排版預覽。
+    - `python domjudge_cli.py check <ID>`：僅跑測資與範例防呆校驗。
+    - `python domjudge_cli.py build --all`：一鍵批次建置 `problems/` 內所有題目。
+* **驗收標準**：
+  - [ ] 終端機參數提示清晰，支援單題與批次打包。
+  - [ ] 批次打包時印出進度與總結報告。
 
-### 階段三：核心引擎實作 (Core Implementation)
-- [ ] `core/markdown_parser.py`：解析 Frontmatter，檢查標題與四大必備章節格式，提取範例輸入輸出。
-- [ ] `core/pdf_compiler.py`：調用 Edge Headless 將 Markdown 編譯為高解析 A4 PDF。
-- [ ] `core/solver_runner.py`：
-  - 封裝為函式 `generate_inputs(seed=42)`，由外層傳入固定 Seed 保證測資可重現。
-  - **使用 `subprocess` 進行跨平台行程隔離與逾時保護**（天然防止死迴圈凍結與全域變數污染，無需在主進程中猴子補丁 `sys.stdin`）。
-  - **自動交叉檢驗 (Sanity Check)**：以 `solver.py` 執行 `statement.md` 提取的範例輸入，自動比對範例輸出是否一致。
-- [ ] `core/packager.py`：生成獨立的 `problem.yaml`、`domjudge-problem.ini`，並依 `samples` 數量自動分流封裝為 `<id>.zip`。
+### 階段三：LLM 協同發想與生成模組 (AI Bridge)
+* **實作內容**：
+  - [ ] `ai/client.py`：統一 LLM 客戶端（支援設定 API Key、Base URL，相容 Gemini / OpenAI 格式）。
+  - [ ] `ai/prompts.py`：少樣本 (Few-shot) Prompt 模板設計（發想收斂 $\to$ `concept.yaml`、`concept.yaml` $\to$ `statement.md` / `solver.py`）。
+  - [ ] CLI 擴展：支援 `python domjudge_cli.py generate <ID> "概念提示詞"`。
+* **驗收標準**：
+  - [ ] 能依提示詞生成合法之 `concept.yaml`。
+  - [ ] 能由 `concept.yaml` 自動推導出合規之題面初稿與正解腳本。
 
-### 階段四：現代化 CLI 與批次處理 (CLI Interface)
-- [ ] 建立 `domjudge_cli.py`：
-  - `python domjudge_cli.py build <id>`：建置單題（生 PDF、生測資、打包 ZIP）。
-  - `python domjudge_cli.py preview <id>`：僅生成 PDF 供檢視排版。
-  - `python domjudge_cli.py build --all`：一鍵批次打包整場考試的所有題目。
+### 階段四：雙視圖 Web 工作台 (Dual-View Workbench)
+* **實作內容**：
+  - [ ] 實作 `web/server.py` 與 `web/static/`（Vanilla JS + 現代 CSS，零 Node.js / npm 依賴）。
+  - [ ] 整合指令：`python domjudge_cli.py serve` 一鍵啟動本機服務。
+  - [ ] **視圖 A（發想協同）**：支援輸入 API Key、題庫清單脈絡拖曳/勾選注入、多輪對話收斂存為 `concept.yaml`。
+  - [ ] **視圖 B（工程管線）**：題目狀態看板、Human-in-the-Loop 線上編輯、本機 `subprocess` 一鍵測試。
+* **驗收標準**：
+  - [ ] 本機啟動後瀏覽器打開 `localhost:8000` 即可操作。
+  - [ ] 完成從發想對話、儲存概念、在線編輯、一鍵測試到下載 ZIP 的全流程。
 
 ---
 
-## 四、 延伸擴展：AI 題目發想平台與雙視圖工作台
-系統的長遠規劃已完成設計規格，詳見 **[AI 題目發想平台與協同架構設計手冊](AI_IDEATION_AND_PLATFORM_EXPANSION.md)**：
-* **核心概念檔 (`concept.yaml`)**：作為題目發想與編譯管線的 SSOT。
-* **視圖 A（發想協同）**：支援 API Key、拖曳既有題庫為脈絡對話、收斂為 `concept.yaml`。
-* **視圖 B（工程管線）**：狀態看板、Human-in-the-Loop 即時本機測試微調、一鍵產出 DOMjudge ZIP。
+## 四、 核心架構決策紀錄 (Architecture Decision Records)
+1. **設定檔優先順序**：採用「雙向寬容」原則。優先讀取 `concept.yaml`；若無則容許從 `statement.md` 的 Frontmatter 讀取，並能反向匯出 `concept.yaml`。
+2. **測資明文保留**：保留 `problems/<ID>/testcases/` 目錄，每次建置自動清空重建，以利出題者檢視原始測資。
+3. **安全隔離機制**：正解程式執行全面使用 Python `subprocess.run(..., timeout=5)`，原生防禦死迴圈並隔離全域變數狀態。
+4. **Web 零額外環境負擔**：前端採純靜態單頁（HTML/CSS/JS），後端由單一 Python 行程驅動，禁止引入 Node.js/npm 建置流程。
