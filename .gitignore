@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output artifacts (產出的題本與題目包)
+dist/
+*.zip
+*.pdf
+!templates/*.pdf
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Scratch / Temp
+scratch/
+temp/
+tmp/
