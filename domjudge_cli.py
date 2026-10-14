@@ -351,6 +351,15 @@ def main():
       "--base-url", default="", help="OpenAI-compatible 自訂 Base URL"
   )
 
+  # 6. serve 指令 (Web 工作台)
+  p_serve = subparsers.add_parser("serve", help="啟動雙視圖 Web 工作台")
+  p_serve.add_argument(
+      "--host", default="127.0.0.1", help="監聽 Host (預設 127.0.0.1)"
+  )
+  p_serve.add_argument(
+      "--port", type=int, default=8000, help="監聽 Port (預設 8000)"
+  )
+
   args = parser.parse_args()
 
   if not args.command:
@@ -367,6 +376,11 @@ def main():
     sys.exit(cmd_list(args))
   elif args.command == "generate":
     sys.exit(cmd_generate(args))
+  elif args.command == "serve":
+    from web.server import run_server
+
+    run_server(host=args.host, port=args.port)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

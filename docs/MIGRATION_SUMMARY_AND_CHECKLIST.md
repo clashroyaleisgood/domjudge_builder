@@ -133,13 +133,14 @@
 
 ### 階段四：雙視圖 Web 工作台 (Dual-View Workbench)
 * **實作內容**：
-  - [ ] 實作 `web/server.py` 與 `web/static/`（Vanilla JS + 現代 CSS，零 Node.js / npm 依賴）。
-  - [ ] 整合指令：`python domjudge_cli.py serve` 一鍵啟動本機服務。
-  - [ ] **視圖 A（發想協同）**：支援輸入 API Key、題庫清單脈絡拖曳/勾選注入、多輪對話收斂存為 `concept.yaml`。
-  - [ ] **視圖 B（工程管線）**：題目狀態看板、Human-in-the-Loop 線上編輯、本機 `subprocess` 一鍵測試。
+  - [x] 實作 `web/server.py` 與 `web/static/`（純 Python 標準庫 ThreadingHTTPServer + Vanilla JS + 現代暗色 CSS，零 Node.js / npm 依賴）。
+  - [x] 整合指令：`python domjudge_cli.py serve` 一鍵啟動本機服務。
+  - [x] **視圖 A（發想協同）**：支援輸入 API Key、題庫清單脈絡勾選注入、對話收斂存為 `concept.yaml`。
+  - [x] **視圖 B（工程管線）**：全題庫燈號狀態看板、Human-in-the-Loop 線上編輯、本機 `subprocess` 一鍵測試、PDF 即時預覽、一鍵打包與 ZIP 下載。
 * **驗收標準**：
-  - [ ] 本機啟動後瀏覽器打開 `localhost:8000` 即可操作。
-  - [ ] 完成從發想對話、儲存概念、在線編輯、一鍵測試到下載 ZIP 的全流程。
+  - [x] 本機啟動後瀏覽器打開 `localhost:8000` 即可操作。
+  - [x] 完成從發想對話、儲存概念、在線編輯、一鍵測試到下載 ZIP 的全流程。
+  - [x] 自動化測試腳本 (`tests/test_phase4.py`) 全數通過。
 
 ---
 

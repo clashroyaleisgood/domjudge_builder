@@ -36,3 +36,43 @@ conda activate domjudge
 * **Python 版本**：3.10+
 * **已安裝依賴套件**：`markdown`, `jinja2`, `numpy`, `faker`, `pyyaml`
 * **外部引擎**：Windows 內建之 Microsoft Edge (`msedge.exe`)
+
+---
+
+## 快速開始 (Quick Start)
+
+### 1. 啟動雙視圖 Web 工作台 (推薦)
+```powershell
+python domjudge_cli.py serve
+```
+* 瀏覽器打開 `http://localhost:8000` 即可使用「題目發想協同」與「工程管線看板」。
+* 零 Node.js / npm 依賴，以純 Python 伺服器驅動。
+
+### 2. 常用 CLI 命令列指令
+```powershell
+# 檢視題目庫現況與生成燈號
+python domjudge_cli.py list
+
+# 批次建置所有題目包 (生成 PDF、測資與 ZIP)
+python domjudge_cli.py build --all
+
+# 建置單一題目
+python domjudge_cli.py build DBM
+
+# 僅渲染題本 PDF 供排版預覽
+python domjudge_cli.py preview DBM
+
+# 僅執行格式驗證與 Sanity Check 交叉檢驗
+python domjudge_cli.py check DBM
+
+# 使用 AI 協同生成新題目 (以既有題目為參考)
+python domjudge_cli.py generate DCA --prompt "小明買披薩要平分給朋友..." --all
+```
+
+### 3. 執行全套自動化回歸測試
+```powershell
+python tests/test_phase1.py  # Core Engine 最小閉環
+python tests/test_phase2.py  # CLI 命令列與批次建置
+python tests/test_phase3.py  # AI 協同生成模組
+python tests/test_phase4.py  # 雙視圖 Web 工作台
+```
