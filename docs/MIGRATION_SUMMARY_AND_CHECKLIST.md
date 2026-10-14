@@ -106,15 +106,18 @@
 
 ### 階段二：現代化 CLI 與多題批次處理 (CLI & Batch Processing)
 * **實作內容**：
-  - [ ] 建立 `domjudge_cli.py`（使用 Python 標準庫 `argparse`，無第三方框架依賴）。
-  - [ ] 支援命令：
+  - [x] 建立 `domjudge_cli.py`（使用 Python 標準庫 `argparse`，無第三方框架依賴，並內建 Windows cp950 編碼保護）。
+  - [x] 支援命令：
     - `python domjudge_cli.py build <ID>`：編譯單題（生 PDF、跑測資、打包 ZIP）。
     - `python domjudge_cli.py preview <ID>`：僅渲染 PDF 供排版預覽。
     - `python domjudge_cli.py check <ID>`：僅跑測資與範例防呆校驗。
     - `python domjudge_cli.py build --all`：一鍵批次建置 `problems/` 內所有題目。
+    - `python domjudge_cli.py list`：清楚列出題目庫現況與各檔案生成燈號。
+  - [x] 建立基準題目 `problems/DAL/`，成功驗證雙題目多題批次建置管線。
 * **驗收標準**：
-  - [ ] 終端機參數提示清晰，支援單題與批次打包。
-  - [ ] 批次打包時印出進度與總結報告。
+  - [x] 終端機參數提示清晰，支援單題與批次打包（自動搜尋題目目錄、不分大小寫比對）。
+  - [x] 批次打包時印出進度與總結報告（成功數、失敗數、耗時統計）。
+  - [x] 自動化測試腳本 (`tests/test_phase2.py`) 全數通過。
 
 ### 階段三：LLM 協同發想與生成模組 (AI Bridge)
 * **實作內容**：

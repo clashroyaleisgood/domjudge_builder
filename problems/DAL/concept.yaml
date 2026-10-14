@@ -1,0 +1,11 @@
+id: DAL
+title: 製作奶茶還需要多少牛奶
+timelimit: 1.0
+memory: 64
+samples: 2
+validator_flags: 'float_tolerance 1E-3'
+
+concept:
+  story_theme: "烘焙飲品時的材料換算與差額計算"
+  core_algorithm: "浮點數比例計算與差值"
+  description: "小美想按照固定比例製作奶茶，計算最多製作份數以及還需要多少牛奶才能配完紅茶。"

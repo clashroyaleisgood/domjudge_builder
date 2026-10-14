@@ -64,3 +64,67 @@ def build_problem(
       "secret_count": len(tc_pairs) - spec.samples,
       "zip_path": zip_path,
   }
+
+
+def preview_problem(
+    problem_dir: Path | str,
+    template_path: Path | str = "templates/html_template.html",
+) -> Path:
+  """僅編譯與預覽題本 PDF"""
+  problem_dir = Path(problem_dir).resolve()
+  template_path = Path(template_path).resolve()
+  statement_file = problem_dir / "statement.md"
+
+  if not statement_file.exists():
+    raise FileNotFoundError(f"在 {problem_dir} 中找不到 statement.md")
+
+  spec = load_spec(problem_dir)
+  with open(statement_file, "r", encoding="utf-8") as f:
+    parsed_md = parse_and_validate_markdown(f.read())
+
+  html_content = render_html_from_markdown(parsed_md, spec, template_path)
+  pdf_path = problem_dir / "problem.pdf"
+  return compile_html_to_pdf(html_content, pdf_path)
+
+
+def check_problem(
+    problem_dir: Path | str,
+    seed: int = 42,
+    timeout: float = 5.0,
+) -> dict:
+  """僅進行題面語法驗證、正解執行與 Sanity Check，不產生 ZIP"""
+  problem_dir = Path(problem_dir).resolve()
+  statement_file = problem_dir / "statement.md"
+
+  if not statement_file.exists():
+    raise FileNotFoundError(f"在 {problem_dir} 中找不到 statement.md")
+
+  spec = load_spec(problem_dir)
+  with open(statement_file, "r", encoding="utf-8") as f:
+    parsed_md = parse_and_validate_markdown(f.read())
+
+  tc_pairs = generate_and_verify_testcases(
+      problem_dir, parsed_md["samples"], seed=seed, timeout=timeout
+  )
+
+  return {
+      "id": spec.id,
+      "title": spec.title,
+      "samples_count": len(parsed_md["samples"]),
+      "total_cases": len(tc_pairs),
+  }
+
+
+def discover_problems(problems_dir: Path | str = "problems") -> list[Path]:
+  """自動掃描題目目錄下的所有合規題目資料夾"""
+  p_dir = Path(problems_dir).resolve()
+  if not p_dir.exists():
+    return []
+
+  discovered = []
+  for sub in sorted(p_dir.iterdir()):
+    if sub.is_dir() and (
+        (sub / "statement.md").exists() or (sub / "concept.yaml").exists()
+    ):
+      discovered.append(sub)
+  return discovered
