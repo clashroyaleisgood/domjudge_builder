@@ -23,6 +23,9 @@
 4. **[印刷樣式 HTML 模板](templates/html_template.html)** (`templates/html_template.html`)
    * 已經過 2026 實測驗證的高解析排版 HTML 模板，內含針對 A4 列印優化的邊距、字級、並排測資框與防斷頁 CSS 規則。
 
+5. **[題目發想平台與 AI 協同架構設計 (新擴展)](docs/AI_IDEATION_AND_PLATFORM_EXPANSION.md)** (`docs/AI_IDEATION_AND_PLATFORM_EXPANSION.md`)
+   * **完整的 AI 出題生態規劃**：發想與工程徹底解耦、核心概念規格 (`concept.yaml`)、雙視圖工作台（發想協同頁 vs 工程管線頁）、Human-in-the-Loop 本機校驗機制。
+
 ---
 
 ## 建議開發環境
@@ -31,5 +34,5 @@
 conda activate domjudge
 ```
 * **Python 版本**：3.10+
-* **已安裝依賴套件**：`markdown`, `jinja2`, `numpy`, `faker`
+* **已安裝依賴套件**：`markdown`, `jinja2`, `numpy`, `faker`, `pyyaml`
 * **外部引擎**：Windows 內建之 Microsoft Edge (`msedge.exe`)

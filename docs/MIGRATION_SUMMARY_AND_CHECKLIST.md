@@ -112,7 +112,8 @@
 - [ ] `core/pdf_compiler.py`：調用 Edge Headless 將 Markdown 編譯為高解析 A4 PDF。
 - [ ] `core/solver_runner.py`：
   - 封裝為函式 `generate_inputs(seed=42)`，由外層傳入固定 Seed 保證測資可重現。
-  - 使用 `redirect_stdin` / `redirect_stdout` 安全執行，加入執行逾時保護（防止出題者寫出死迴圈）。
+  - **使用 `subprocess` 進行跨平台行程隔離與逾時保護**（天然防止死迴圈凍結與全域變數污染，無需在主進程中猴子補丁 `sys.stdin`）。
+  - **自動交叉檢驗 (Sanity Check)**：以 `solver.py` 執行 `statement.md` 提取的範例輸入，自動比對範例輸出是否一致。
 - [ ] `core/packager.py`：生成獨立的 `problem.yaml`、`domjudge-problem.ini`，並依 `samples` 數量自動分流封裝為 `<id>.zip`。
 
 ### 階段四：現代化 CLI 與批次處理 (CLI Interface)
@@ -120,3 +121,11 @@
   - `python domjudge_cli.py build <id>`：建置單題（生 PDF、生測資、打包 ZIP）。
   - `python domjudge_cli.py preview <id>`：僅生成 PDF 供檢視排版。
   - `python domjudge_cli.py build --all`：一鍵批次打包整場考試的所有題目。
+
+---
+
+## 四、 延伸擴展：AI 題目發想平台與雙視圖工作台
+系統的長遠規劃已完成設計規格，詳見 **[AI 題目發想平台與協同架構設計手冊](AI_IDEATION_AND_PLATFORM_EXPANSION.md)**：
+* **核心概念檔 (`concept.yaml`)**：作為題目發想與編譯管線的 SSOT。
+* **視圖 A（發想協同）**：支援 API Key、拖曳既有題庫為脈絡對話、收斂為 `concept.yaml`。
+* **視圖 B（工程管線）**：狀態看板、Human-in-the-Loop 即時本機測試微調、一鍵產出 DOMjudge ZIP。
