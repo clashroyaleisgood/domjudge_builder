@@ -121,12 +121,15 @@
 
 ### 階段三：LLM 協同發想與生成模組 (AI Bridge)
 * **實作內容**：
-  - [ ] `ai/client.py`：統一 LLM 客戶端（支援設定 API Key、Base URL，相容 Gemini / OpenAI 格式）。
-  - [ ] `ai/prompts.py`：少樣本 (Few-shot) Prompt 模板設計（發想收斂 $\to$ `concept.yaml`、`concept.yaml` $\to$ `statement.md` / `solver.py`）。
-  - [ ] CLI 擴展：支援 `python domjudge_cli.py generate <ID> "概念提示詞"`。
+  - [x] `ai/client.py`：統一 LLM 客戶端（使用 Python 標準庫 `urllib` 實作，零外部 SDK 依賴；支援 Gemini 與 OpenAI 兼容格式，並內建測試 Mock）。
+  - [x] `ai/prompts.py`：少樣本 (Few-shot) Prompt 模板設計（動態參考既有題目收斂 `concept.yaml`、推導 `statement.md` 與 `solver.py`）。
+  - [x] `ai/generator.py`：三段式生成器（concept $\to$ statement $\to$ solver，自動過濾反引號代碼標記）。
+  - [x] CLI 擴展：支援 `python domjudge_cli.py generate <ID> --prompt "..." [--all]`。
 * **驗收標準**：
-  - [ ] 能依提示詞生成合法之 `concept.yaml`。
-  - [ ] 能由 `concept.yaml` 自動推導出合規之題面初稿與正解腳本。
+  - [x] 能依提示詞生成合法之 `concept.yaml`。
+  - [x] 能由 `concept.yaml` 自動推導出合規之題面初稿與正解腳本。
+  - [x] 生成之題目無縫通過 `check` 與 `build` 編譯管線。
+  - [x] 自動化測試腳本 (`tests/test_phase3.py`) 全數通過。
 
 ### 階段四：雙視圖 Web 工作台 (Dual-View Workbench)
 * **實作內容**：

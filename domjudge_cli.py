@@ -206,6 +206,77 @@ def cmd_list(args):
   return 0
 
 
+def cmd_generate(args):
+  from ai.client import LLMClient
+  from ai.generator import (
+      generate_concept_file,
+      generate_solver_file,
+      generate_statement_file,
+  )
+
+  client = LLMClient(
+      api_key=args.api_key,
+      provider=args.provider,
+      model=args.model,
+      base_url=args.base_url,
+  )
+  problem_id = args.id.upper()
+  ref_ids = [r.strip() for r in args.ref.split(",") if r.strip()]
+
+  do_concept = (
+      args.concept or args.all or (not args.statement and not args.solver)
+  )
+  do_statement = args.statement or args.all
+  do_solver = args.solver or args.all
+
+  print(f"[AI] 開始為 {problem_id} 執行 AI 協同生成...")
+
+  try:
+    if do_concept:
+      if not args.prompt and not (
+          BASE_DIR / "problems" / problem_id / "concept.yaml"
+      ).exists():
+        print("錯誤：生成 concept 需要提供 --prompt '題目構想描述'")
+        return 1
+      if args.prompt:
+        print(
+            f"  [1/3] 正在收斂核心概念規格 (concept.yaml)...",
+            end=" ",
+            flush=True,
+        )
+        c_path = generate_concept_file(
+            problem_id, args.prompt, ref_ids=ref_ids, client=client
+        )
+        print(f"[OK] -> {c_path.relative_to(BASE_DIR)}")
+
+    if do_statement:
+      print(
+          f"  [2/3] 正在推導題目敘述題本 (statement.md)...",
+          end=" ",
+          flush=True,
+      )
+      s_path = generate_statement_file(problem_id, client=client)
+      print(f"[OK] -> {s_path.relative_to(BASE_DIR)}")
+
+    if do_solver:
+      print(
+          f"  [3/3] 正在生成解答與測資腳本 (solver.py)...",
+          end=" ",
+          flush=True,
+      )
+      p_path = generate_solver_file(problem_id, client=client)
+      print(f"[OK] -> {p_path.relative_to(BASE_DIR)}")
+
+    print(
+        f"\n[OK] AI 生成流程完畢！可使用 'python domjudge_cli.py check {problem_id}'"
+        " 進行驗證。"
+    )
+    return 0
+  except Exception as e:
+    print(f"\n[FAIL] 生成失敗：{e}")
+    return 1
+
+
 def main():
   parser = argparse.ArgumentParser(
       description="DOMjudge Builder - 現代化題目建置、編譯與打包工具",
@@ -214,10 +285,14 @@ def main():
   subparsers = parser.add_subparsers(dest="command", help="子指令清單")
 
   # 1. build 指令
-  p_build = subparsers.add_parser("build", help="建置題目 (編譯 PDF、產生測資、打包 ZIP)")
+  p_build = subparsers.add_parser(
+      "build", help="建置題目 (編譯 PDF、產生測資、打包 ZIP)"
+  )
   p_build.add_argument("id", nargs="?", default="", help="題目代號 (例如 DBM)")
   p_build.add_argument("--all", action="store_true", help="批次建置所有題目")
-  p_build.add_argument("--seed", type=int, default=42, help="隨機測資 Seed (預設 42)")
+  p_build.add_argument(
+      "--seed", type=int, default=42, help="隨機測資 Seed (預設 42)"
+  )
   p_build.add_argument(
       "--timeout", type=float, default=5.0, help="Solver 逾時上限秒數 (預設 5.0)"
   )
@@ -230,14 +305,51 @@ def main():
   p_prev.add_argument("id", help="題目代號 (例如 DBM)")
 
   # 3. check 指令
-  p_check = subparsers.add_parser("check", help="僅執行格式驗證與 Sanity Check 交叉檢驗")
+  p_check = subparsers.add_parser(
+      "check", help="僅執行格式驗證與 Sanity Check 交叉檢驗"
+  )
   p_check.add_argument("id", nargs="?", default="", help="題目代號 (例如 DBM)")
   p_check.add_argument("--all", action="store_true", help="檢驗所有題目")
   p_check.add_argument("--seed", type=int, default=42, help="隨機測資 Seed")
-  p_check.add_argument("--timeout", type=float, default=5.0, help="Solver 逾時秒數")
+  p_check.add_argument(
+      "--timeout", type=float, default=5.0, help="Solver 逾時秒數"
+  )
 
   # 4. list 指令
   subparsers.add_parser("list", help="列出題庫所有題目與檔案建置狀態")
+
+  # 5. generate 指令 (AI 模組)
+  p_gen = subparsers.add_parser(
+      "generate", help="使用 AI 協同生成 concept、題面或解答"
+  )
+  p_gen.add_argument("id", help="題目代號 (例如 DCA)")
+  p_gen.add_argument("--prompt", default="", help="題目發想描述或構想文字")
+  p_gen.add_argument(
+      "--concept", action="store_true", help="僅生成 concept.yaml"
+  )
+  p_gen.add_argument(
+      "--statement", action="store_true", help="僅生成 statement.md"
+  )
+  p_gen.add_argument("--solver", action="store_true", help="僅生成 solver.py")
+  p_gen.add_argument(
+      "--all",
+      action="store_true",
+      help="完整生成 (concept -> statement -> solver)",
+  )
+  p_gen.add_argument(
+      "--ref", default="DBM,DAL", help="參考既有題目 ID 清單 (以逗號分隔)"
+  )
+  p_gen.add_argument("--api-key", default="", help="LLM API Key")
+  p_gen.add_argument(
+      "--provider",
+      default="gemini",
+      choices=["gemini", "openai"],
+      help="AI 提供商 (預設 gemini)",
+  )
+  p_gen.add_argument("--model", default="", help="模型名稱")
+  p_gen.add_argument(
+      "--base-url", default="", help="OpenAI-compatible 自訂 Base URL"
+  )
 
   args = parser.parse_args()
 
@@ -253,6 +365,8 @@ def main():
     sys.exit(cmd_check(args))
   elif args.command == "list":
     sys.exit(cmd_list(args))
+  elif args.command == "generate":
+    sys.exit(cmd_generate(args))
 
 
 if __name__ == "__main__":
