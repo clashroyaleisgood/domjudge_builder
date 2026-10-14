@@ -88,21 +88,21 @@
 
 ### 階段一：Core Engine 最小閉環與 MVP 驗證 (Minimal Core MVP)
 * **實作內容**：
-  - [ ] 目錄與基準題目建立：建立 `problems/DBM/`，遷移 `statement.md`、`solver.py` 與 `concept.yaml` 作為驗證基準。
-  - [ ] `core/spec.py`：規格解析器（雙向寬容：優先讀取 `concept.yaml`；若無則自動 fallback 解析 `statement.md` 的 YAML Frontmatter）。
-  - [ ] `core/markdown_engine.py`：解析題面結構、提取 `### 範例輸入 #1` 與 `### 範例輸出 #1`、轉為內部 HTML。
-  - [ ] `core/pdf_engine.py`：調用 Edge Headless 將題本渲染為標準 A4 PDF（保留 MathJax 渲染等待預算）。
-  - [ ] `core/testcase_runner.py`：
+  - [x] 目錄與基準題目建立：建立 `problems/DBM/`，遷移 `statement.md`、`solver.py` 與 `concept.yaml` 作為驗證基準。
+  - [x] `core/spec.py`：規格解析器（雙向寬容：優先讀取 `concept.yaml`；若無則自動 fallback 解析 `statement.md` 的 YAML Frontmatter）。
+  - [x] `core/markdown_engine.py`：解析題面結構、提取 `### 範例輸入 #1` 與 `### 範例輸出 #1`、轉為內部 HTML。
+  - [x] `core/pdf_engine.py`：調用 Edge Headless 將題本渲染為標準 A4 PDF（保留 MathJax 渲染等待預算）。
+  - [x] `core/testcase_runner.py`：
     - 呼叫 `solver.py` 之 `generate_inputs(seed=42)` 產出測試案例。
     - **使用 `subprocess` 進行行程隔離與超時終止**（超時 5s 自動強制 kill，防止死迴圈凍結）。
     - 寫入 `problems/<ID>/testcases/`（每次生成前自動清空舊檔，供人肉抽檢）。
     - **自動交叉檢驗 (Sanity Check)**：將 Markdown 範例輸入餵入 solver，若輸出與題本範例輸出不一致立即報錯中斷。
-  - [ ] `core/packager.py`：自動生成個別專屬之 `problem.yaml` 與 `domjudge-problem.ini`，並依 `samples` 數量自動分流封裝為 `dist/<ID>.zip`。
+  - [x] `core/packager.py`：自動生成個別專屬之 `problem.yaml` 與 `domjudge-problem.ini`，並依 `samples` 數量自動分流封裝為 `dist/<ID>.zip`。
 * **驗收標準 (Acceptance Criteria)**：
-  - [ ] 執行單一測試腳本，能順利產出 `problems/DBM/problem.pdf`，排版與公式無誤。
-  - [ ] `problems/DBM/testcases/` 產出對應 `.in` 與 `.ans` 明文檔。
-  - [ ] 刻意修改 `statement.md` 的範例輸出時，系統能主動攔截並報錯（防呆有效）。
-  - [ ] 成功生成 `dist/DBM.zip`，解壓縮結構完全符合 DOMjudge 7.3.3 標準。
+  - [x] 執行單一測試腳本 (`tests/test_phase1.py`)，順利產出 `problems/DBM/problem.pdf`，排版與公式無誤。
+  - [x] `problems/DBM/testcases/` 產出對應 10 組 `.in` 與 `.ans` 明文檔。
+  - [x] 刻意修改 `statement.md` 的範例輸出時，系統能主動攔截並報錯（防呆有效）。
+  - [x] 成功生成 `dist/DBM.zip`，解壓縮結構完全符合 DOMjudge 7.3.3 標準。
 
 ### 階段二：現代化 CLI 與多題批次處理 (CLI & Batch Processing)
 * **實作內容**：

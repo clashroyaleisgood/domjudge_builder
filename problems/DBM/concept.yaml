@@ -1,0 +1,11 @@
+id: DBM
+title: 製作餅乾後剩下多少材料
+timelimit: 1.0
+memory: 64
+samples: 2
+validator_flags: 'float_tolerance 1E-3'
+
+concept:
+  story_theme: "烘焙餅乾時的材料比例與換算"
+  core_algorithm: "浮點數比例計算與剩餘量"
+  description: "小華想按照固定比例製作餅乾，計算最多製作份數與剩餘材料。"
